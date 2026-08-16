@@ -5,6 +5,7 @@ import StudioSection from '@/components/StudioSection'
 import FaqSection from '@/components/FaqSection'
 import Configurator from '@/components/Configurator'
 import PortfolioSection from '@/components/PortfolioSection'
+import CustomProject from '@/components/CustomProject'
 
 const ADMIN_URL = 'https://admin.instantmov.fr'
 
@@ -119,12 +120,12 @@ export default async function Home() {
               </div>
               <div className="hero-right reveal">
                 <p>{c(ct, 'hero_description', "Depuis 3 ans, on accompagne les marques ambitieuses avec du contenu qui capte l'attention et génère des résultats concrets.")}</p>
-                <div className="hero-ctas">
-                  <a href="#configurateur" className="btn btn-primary">{c(ct, 'hero_cta_primary', 'Configurer mon projet →')}</a>
-                  <a href="#realisations" className="btn btn-ghost">{c(ct, 'hero_cta_secondary', 'Voir nos réalisations')}</a>
+                <div className="hero-ctas" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <CustomProject variant="hero" label={c(ct, 'hero_cta_custom', 'J’ai un projet, parlons-en')} />
+                  <a href="#realisations" className="hero-cta-secondary">{c(ct, 'hero_cta_secondary', 'Voir nos réalisations')}</a>
                 </div>
                 <div className="hero-config-note">
-                  <strong>Configurateur en ligne →</strong> {c(ct, 'hero_config_note', 'Sélectionnez vos services et obtenez une estimation instantanée. Réponse sous 24h.')}
+                  <strong>Un besoin précis ?</strong> {c(ct, 'hero_config_note', 'Le configurateur en ligne vous donne une estimation instantanée. Réponse sous 24h.')}
                 </div>
               </div>
             </div>
@@ -231,6 +232,19 @@ export default async function Home() {
         ]}
         images={[c(ct, 'studio_image_1', ''), c(ct, 'studio_image_2', ''), c(ct, 'studio_image_3', ''), c(ct, 'studio_image_4', '')]}
       />
+
+      {/* PROJET SUR MESURE — entry point above the predefined offers */}
+      <section className="custom-cta" id="projet-sur-mesure">
+        <div className="container">
+          <div className="custom-cta-inner reveal">
+            <span className="label" style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 10 }}>Projet sur mesure</span>
+            <h3>Vous avez un projet <em className="accent">sur mesure ?</em></h3>
+            <p className="custom-cta-proof">{c(ct, 'custom_cta_proof', 'Red Bull, le Stade Toulousain ou les Galeries Lafayette nous confient leurs contenus. Parlons du vôtre.')}</p>
+            <CustomProject variant="config" label={c(ct, 'custom_cta_label', 'Parlons de votre projet')} />
+            <a href="#configurateur" className="custom-cta-or">Ou configurez directement l&apos;une de nos offres ↓</a>
+          </div>
+        </div>
+      </section>
 
       {/* CONFIGURATEUR */}
       <Configurator />
