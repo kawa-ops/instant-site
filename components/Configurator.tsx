@@ -86,7 +86,10 @@ export default function Configurator() {
         <div style={{ marginBottom: 40 }}>
           <span className="label" style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 10 }}>Configurateur</span>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem,3vw,2.4rem)', letterSpacing: '-0.025em', fontWeight: 700 }} className="reveal">Construisez votre<br /><em className="accent">projet sur mesure.</em></h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 8 }}>Sélectionnez vos besoins et obtenez une estimation instantanée.</p>
+          <div style={{ margin: '18px 0 6px' }}>
+            <a className="btn btn-primary btn-config-cta" href="/projet">J&rsquo;ai un projet, parlons-en →</a>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 12 }}>Ou sélectionnez vos besoins ci-dessous et obtenez une estimation instantanée.</p>
           <div className="step-dots">
             {[1,2,3,4].map(i => <div key={i} className={`step-dot${step === i ? ' active' : ''}`} />)}
           </div>

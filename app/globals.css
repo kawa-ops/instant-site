@@ -323,3 +323,14 @@ em.accent { font-family: var(--font-italic); font-style: italic; font-weight: 40
   .cp-modal { padding: 28px 20px; }
   .custom-cta-inner { padding: 32px 20px; }
 }
+
+/* ===== Dedicated /projet page + testimonial polish ===== */
+.projet-page { padding: 130px 0 80px; }
+.projet-head { max-width: 640px; margin: 0 auto 36px; text-align: center; }
+.projet-sub { color: var(--text-muted); font-size: 0.95rem; margin-top: 12px; }
+.projet-form-wrap { max-width: 640px; margin: 0 auto; background: var(--bg-warm); border: 1px solid var(--border); border-radius: 18px; padding: 36px 32px; }
+@media(max-width:600px) { .projet-page { padding: 104px 0 48px; } .projet-form-wrap { padding: 26px 18px; } }
+
+.testi-text { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.testi-card { display: flex; flex-direction: column; }
+.testi-author { margin-top: auto; }

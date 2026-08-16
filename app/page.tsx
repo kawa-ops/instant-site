@@ -5,7 +5,6 @@ import StudioSection from '@/components/StudioSection'
 import FaqSection from '@/components/FaqSection'
 import Configurator from '@/components/Configurator'
 import PortfolioSection from '@/components/PortfolioSection'
-import CustomProject from '@/components/CustomProject'
 
 const ADMIN_URL = 'https://admin.instantmov.fr'
 
@@ -120,12 +119,11 @@ export default async function Home() {
               </div>
               <div className="hero-right reveal">
                 <p>{c(ct, 'hero_description', "Depuis 3 ans, on accompagne les marques ambitieuses avec du contenu qui capte l'attention et génère des résultats concrets.")}</p>
-                <div className="hero-ctas" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <CustomProject variant="hero" label={c(ct, 'hero_cta_custom', 'J’ai un projet, parlons-en')} />
-                  <a href="#realisations" className="hero-cta-secondary">{c(ct, 'hero_cta_secondary', 'Voir nos réalisations')}</a>
-                </div>
-                <div className="hero-config-note">
-                  <strong>Un besoin précis ?</strong> {c(ct, 'hero_config_note', 'Le configurateur en ligne vous donne une estimation instantanée. Réponse sous 24h.')}
+                <div className="hero-ctas">
+                  <a className="btn-mega" href="/projet">
+                    {c(ct, 'hero_cta_custom', 'J’ai un projet, parlons-en')}
+                    <span className="btn-mega-arrow">→</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -240,7 +238,7 @@ export default async function Home() {
             <span className="label" style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 10 }}>Projet sur mesure</span>
             <h3>Vous avez un projet <em className="accent">sur mesure ?</em></h3>
             <p className="custom-cta-proof">{c(ct, 'custom_cta_proof', 'Red Bull, le Stade Toulousain ou les Galeries Lafayette nous confient leurs contenus. Parlons du vôtre.')}</p>
-            <CustomProject variant="config" label={c(ct, 'custom_cta_label', 'Parlons de votre projet')} />
+            <a className="btn btn-primary btn-config-cta" href="/projet">{c(ct, 'custom_cta_label', 'J’ai un projet, parlons-en')} →</a>
             <a href="#configurateur" className="custom-cta-or">Ou configurez directement l&apos;une de nos offres ↓</a>
           </div>
         </div>
@@ -399,23 +397,36 @@ const FALLBACK_TESTIMONIALS = [
 
 interface TestiItem { id: string; name: string; company: string; role?: string; text: string; rating: number; photoUrl?: string }
 
+// Internal CMS markers must never reach visitors — even if a draft is
+// accidentally toggled active in the admin, it stays off the website.
+const DRAFT_MARKERS = ['[brouillon', '[proposition', '[à vérifier', 'à valider', 'draft', 'placeholder']
+function isPublishable(t: TestiItem) {
+  const blob = `${t.name} ${t.text}`.toLowerCase()
+  return t.text?.trim() && !DRAFT_MARKERS.some(m => blob.includes(m))
+}
+function cleanName(s: string) {
+  return s.replace(/^\[[^\]]*\]\s*/, '').replace(/\s+—\s+.*$/, '').trim()
+}
+
 function TestimonialsSection({ testimonials }: { testimonials: TestiItem[] }) {
-  const list = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS
+  const real = testimonials.filter(isPublishable)
+  const list = real.length > 0 ? real : FALLBACK_TESTIMONIALS
   const half = Math.ceil(list.length / 2)
   const row1 = list.slice(0, half)
   const row2 = list.slice(half)
 
   function Card({ item }: { item: TestiItem }) {
+    const rating = Math.min(5, Math.max(0, item.rating || 0))
     return (
       <div className="testi-card">
-        <div className="testi-stars">{'★'.repeat(item.rating)}{'☆'.repeat(5 - item.rating)}</div>
+        {rating >= 1 && <div className="testi-stars">{'★'.repeat(rating)}{'☆'.repeat(5 - rating)}</div>}
         <p className="testi-text">&ldquo;{item.text}&rdquo;</p>
         <div className="testi-author">
           {item.photoUrl
             ? <img src={item.photoUrl} alt={item.name} className="testi-avatar" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
             : <div className="testi-avatar" />}
           <div>
-            <div className="testi-name">{item.name}</div>
+            <div className="testi-name">{cleanName(item.name)}</div>
             <div className="testi-company">{item.company}{item.role ? ` · ${item.role}` : ''}</div>
           </div>
         </div>
