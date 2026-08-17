@@ -43,13 +43,14 @@ export default function MetaPixel() {
           fbq('track', 'PageView');
         `}
       </Script>
-      <noscript>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          height="1" width="1" style={{ display: 'none' }} alt=""
-          src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
-        />
-      </noscript>
+      {/* dangerouslySetInnerHTML keeps the fallback inert when JS is enabled —
+          React-rendered <noscript> children would otherwise load anyway and
+          double-count every PageView */}
+      <noscript
+        dangerouslySetInnerHTML={{
+          __html: `<img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1" />`,
+        }}
+      />
     </>
   )
 }
