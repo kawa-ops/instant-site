@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 // Thank-you page after a custom-project submission.
 // NOTE: the Lead event fires in the form's success callback, NOT here —
 // reloading /merci must never create a second lead or a second event.
-const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || ''
+const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/kawa-instantmov/30min'
 
 export default function MerciPage() {
   return (
