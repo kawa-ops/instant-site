@@ -107,7 +107,12 @@ export default async function Home() {
             <div className="hero-bottom">
               <div className="hero-video-wrap reveal">
                 {c(ct, 'hero_vsl_url') ? (
-                  <video src={c(ct, 'hero_vsl_url')} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+                  <video
+                    src={c(ct, 'hero_vsl_url')}
+                    poster={c(ct, 'hero_vsl_poster', 'https://sulpotxnmcczyznnqbeu.supabase.co/storage/v1/object/public/media/images/1787004861634_hero-redbull-hero-poster.jpg')}
+                    autoPlay muted loop playsInline preload="metadata"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }}
+                  />
                 ) : (
                   <div className="hero-video-placeholder">
                     <button className="play-btn">
@@ -318,7 +323,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>{c(ct, 'footer_copyright', '© 2025 Instant. — Tous droits réservés')}</p>
+            <p>{c(ct, 'footer_copyright', '© 2026 Instant. — Tous droits réservés')}</p>
             <p>{c(ct, 'footer_city', 'Toulouse · France')}</p>
           </div>
         </div>
