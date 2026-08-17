@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { newEventId, fbTrack, fbTrackCustom, getFbCookies, getUtms, budgetToValue } from '@/lib/tracking'
 
 // Custom-project qualification form (2 steps, conditional fields).
 // Single source of truth for every "J'ai un projet, parlons-en" entry
@@ -28,33 +30,57 @@ const EMPTY = {
 }
 
 export default function CustomProjectForm() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({ ...EMPTY })
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
-  const [utm, setUtm] = useState('')
+  const [fieldError, setFieldError] = useState('')
 
-  // Preserve UTM parameters for lead attribution
+  // ViewContent: the lead form is the ad landing page
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search)
-      const pairs: string[] = []
-      params.forEach((v, k) => { if (k.startsWith('utm_') || k === 'ref') pairs.push(`${k}=${v}`) })
-      if (pairs.length > 0) setUtm(pairs.join(' · '))
-    } catch {}
+    fbTrack('ViewContent', { content_name: 'Formulaire projet', content_category: 'Lead form' })
   }, [])
 
   const s = (k: keyof typeof EMPTY) => (v: string) => setForm(f => ({ ...f, [k]: v }))
   const isEvent = EVENT_TYPES.includes(form.type)
-  const step1Ok = form.firstName.trim() && form.email.trim() && /.+@.+\..+/.test(form.email)
-  const step2Ok = form.type && form.description.trim()
+  // Company is required — it's what separates a 600 € request from a 25 000 € one
+  const step1Ok = form.firstName.trim() && form.email.trim() && /.+@.+\..+/.test(form.email) && form.company.trim()
+  // Budget is required too ("À définir ensemble" counts as an answer)
+  const step2Ok = form.type && form.description.trim() && form.budget
+
+  function goStep2() {
+    if (!form.company.trim()) {
+      setFieldError('Merci d’indiquer votre entreprise ou organisation — c’est ce qui nous permet de préparer votre réponse.')
+      return
+    }
+    if (!step1Ok) {
+      setFieldError('Merci de remplir votre prénom, un email valide et votre entreprise.')
+      return
+    }
+    setFieldError('')
+    // Lead_Start: optimisation event while full-Lead volume ramps up
+    fbTrackCustom('Lead_Start', { content_name: 'Formulaire projet - etape 1' })
+    setStep(2)
+  }
 
   async function submit() {
-    if (!step2Ok || sending) return
+    if (sending) return
+    if (!form.budget) {
+      setFieldError('Merci d’indiquer une fourchette de budget — « À définir ensemble » convient très bien si vous ne savez pas encore.')
+      return
+    }
+    if (!step2Ok) {
+      setFieldError('Merci de choisir un type de projet et de le décrire en quelques mots.')
+      return
+    }
+    setFieldError('')
     setSending(true)
     setError('')
     const typeLabel = PROJECT_TYPES.find(t => t.value === form.type)?.label || form.type
+    const utms = getUtms()
+    const utmLine = Object.entries(utms).map(([k, v]) => `${k}=${v}`).join(' · ')
     const message = [
       '🎯 PROJET SUR MESURE',
       `Type : ${typeLabel}`,
@@ -66,8 +92,12 @@ export default function CustomProjectForm() {
       form.deadline ? `Deadline souhaitée : ${form.deadline}` : '',
       form.extra ? `Infos complémentaires : ${form.extra}` : '',
       form.website ? `Site / Instagram : ${form.website}` : '',
-      utm ? `UTM : ${utm}` : '',
+      utmLine ? `UTM : ${utmLine}` : '',
     ].filter(Boolean).join('\n')
+
+    // One event id shared with the server-side CAPI event (deduplication)
+    const eventId = newEventId()
+    const { fbp, fbc } = getFbCookies()
 
     try {
       const res = await fetch(`${ADMIN_URL}/api/leads`, {
@@ -81,11 +111,26 @@ export default function CustomProjectForm() {
           budget: form.budget || null,
           message,
           source: 'Website — Custom Project',
+          meta: {
+            event_id: eventId,
+            event_source_url: window.location.href,
+            fbp, fbc,
+            utms,
+          },
         }),
       })
       if (!res.ok) throw new Error('error')
+      // Lead fires ONLY on confirmed success — never on click.
+      // A click-fired Lead would count network errors and drop-offs, and
+      // the ad algorithm would learn on noise.
+      fbTrack('Lead', {
+        content_name: 'Formulaire projet',
+        content_category: typeLabel,
+        value: budgetToValue(form.budget),
+        currency: 'EUR',
+      }, eventId)
       setDone(true)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      router.push('/merci')
     } catch {
       setError('Erreur lors de l’envoi — réessayez dans quelques instants ou écrivez-nous à hello@instantmov.fr.')
     }
@@ -116,10 +161,11 @@ export default function CustomProjectForm() {
           <div className="form-field"><label>Nom</label><input value={form.lastName} onChange={e => s('lastName')(e.target.value)} placeholder="Nom" autoComplete="family-name" /></div>
           <div className="form-field"><label>Email *</label><input type="email" inputMode="email" value={form.email} onChange={e => s('email')(e.target.value)} placeholder="vous@entreprise.com" autoComplete="email" /></div>
           <div className="form-field"><label>Téléphone</label><input type="tel" inputMode="tel" value={form.phone} onChange={e => s('phone')(e.target.value)} placeholder="06 12 34 56 78" autoComplete="tel" /></div>
-          <div className="form-field"><label>Entreprise / Organisation</label><input value={form.company} onChange={e => s('company')(e.target.value)} placeholder="Optionnel" autoComplete="organization" /></div>
+          <div className="form-field"><label>Entreprise / Organisation *</label><input value={form.company} onChange={e => s('company')(e.target.value)} placeholder="Votre structure" autoComplete="organization" required aria-required="true" /></div>
           <div className="form-field"><label>Site / Instagram</label><input value={form.website} onChange={e => s('website')(e.target.value)} placeholder="Optionnel" /></div>
+          {fieldError && <p className="cp-error cp-full" role="alert">{fieldError}</p>}
           <div className="cp-nav">
-            <button className="btn btn-primary" disabled={!step1Ok} onClick={() => step1Ok && setStep(2)}>Continuer →</button>
+            <button className="btn btn-primary" onClick={goStep2}>Continuer →</button>
           </div>
         </div>
       )}
@@ -147,17 +193,18 @@ export default function CustomProjectForm() {
           <div className="form-field"><label>Livrables attendus</label><input value={form.deliverables} onChange={e => s('deliverables')(e.target.value)} placeholder="Aftermovie, reels, photos…" /></div>
           <div className="form-field"><label>Deadline souhaitée</label><input value={form.deadline} onChange={e => s('deadline')(e.target.value)} placeholder="Fin septembre, flexible…" /></div>
           <div className="form-field">
-            <label>Budget estimé</label>
-            <select value={form.budget} onChange={e => s('budget')(e.target.value)}>
+            <label>Budget estimé *</label>
+            <select value={form.budget} onChange={e => s('budget')(e.target.value)} required aria-required="true">
               <option value="">Sélectionnez…</option>
               {BUDGETS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
           </div>
           <div className="form-field cp-full"><label>Informations complémentaires</label><textarea value={form.extra} onChange={e => s('extra')(e.target.value)} placeholder="Optionnel" rows={2} /></div>
-          {error && <p className="cp-error cp-full">{error}</p>}
+          {fieldError && <p className="cp-error cp-full" role="alert">{fieldError}</p>}
+          {error && <p className="cp-error cp-full" role="alert">{error}</p>}
           <div className="cp-nav cp-full">
             <button className="btn btn-ghost" onClick={() => setStep(1)}>← Retour</button>
-            <button className="btn btn-primary" disabled={!step2Ok || sending} onClick={submit}>
+            <button className="btn btn-primary" disabled={sending} onClick={submit}>
               {sending ? 'Envoi…' : 'Envoyer mon projet →'}
             </button>
           </div>
